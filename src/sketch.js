@@ -1,6 +1,4 @@
-
-
-
+let mode_multiple_labels = false;
 
 
 let canvas = {
@@ -131,6 +129,7 @@ function mouseReleased() {
     // bbsにbbを追加
     bb = normalizeBoundingBox(bb);
     if (bb.w * bb.h > 20) {
+
         // labelsに含まれるbutton要素で、getAttribute('checked')がtrueのもののidをvaluesに代入
         let buttons = document.querySelectorAll('button');
         let values = [];
@@ -174,6 +173,14 @@ let index = 0;
 
 
 function saveAnnotations() {
+
+    // jpgFilesが空の時は何もしない
+    if (!loaded_files) {
+        bbs = [];
+        alert('load image folder first')
+        return;
+    }
+
     // bbs array to formatted string
     let write_data = bbs.map(bb => {
         console.log({ bb });
@@ -240,4 +247,23 @@ function keyPressed() {
             }
         }
     }
+}
+
+function toggleMultipleLabelsMode(dom) {
+    console.log(dom.checked);
+    mode_multiple_labels = dom.checked;
+    if (mode_multiple_labels == false) {
+        resetAllLabelToggles();
+    }
+}
+
+function resetAllLabelToggles() {
+    let buttons = document.querySelector('#labels').querySelectorAll('button');
+    buttons.forEach(button => {
+        button.setAttribute('checked', false);
+        if (button.classList.contains('btn-primary')) {
+            button.classList.remove('btn-primary');
+            button.classList.add('btn-secondary');
+        }
+    });
 }

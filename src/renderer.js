@@ -144,6 +144,10 @@ function toggleLabel(id) {
 
     let elem = document.getElementById(id);
 
+    // multiple labelsが有効でない場合はラベル選択時に他のラベルを外す
+    if (mode_multiple_labels == false) {
+        resetAllLabelToggles();
+    }
     // checkedのとき
     if (elem.classList.contains('btn-secondary')) {
         elem.classList.remove('btn-secondary');
