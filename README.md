@@ -10,3 +10,5 @@ npm install
 npm start
 ```
 
+## Change labels
+You can change labels in `src/labels.js`.
