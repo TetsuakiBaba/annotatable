@@ -209,6 +209,10 @@ async function loadAnnotations() {
         bbs = [];
     }
 
+    setTimeout(function () {
+        adjustCanvasSize()
+    }, 200);
+
 }
 
 function keyPressed() {
