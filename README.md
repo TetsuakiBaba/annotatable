@@ -1,6 +1,6 @@
 # annotatable
 
-![teaser](teaser.png)
+![teaser](teaser.gif)
 
 ## Getting started
 ```
