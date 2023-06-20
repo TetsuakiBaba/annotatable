@@ -198,8 +198,8 @@ function saveAnnotations() {
 
 }
 
-async function loadAnnotations() {
-    img = await loadImage(loaded_files.jpgFiles[index]);
+function loadAnnotations() {
+    img = loadImage(loaded_files.jpgFiles[index], adjustCanvasSize, imageLoadError);
     let txt_file_name = loaded_files.jpgFiles[index].replace(/\.jpg$/, ".txt");
     if (fs.existsSync(txt_file_name)) {
         console.log('The file exists.');
@@ -209,10 +209,12 @@ async function loadAnnotations() {
         bbs = [];
     }
 
-    setTimeout(function () {
-        adjustCanvasSize()
-    }, 200);
 
+
+}
+
+function imageLoadError() {
+    alert('Image load error');
 }
 
 function keyPressed() {
