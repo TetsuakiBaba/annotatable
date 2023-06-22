@@ -42,7 +42,7 @@ document.addEventListener('dragover', (event) => {
 document.addEventListener('dragleave', (event) => {
     event.preventDefault();
     dropzone.style.backgroundColor = null; // Reset CSS here
-    message.textContent = 'Drop folder here';
+
 });
 
 
@@ -62,11 +62,15 @@ document.addEventListener('drop', (event) => {
 
             document.querySelector('#directory_information').innerHTML += `<br>Loaded Image: ${files.jpgFiles.length}`;
             document.querySelector('#directory_information').innerHTML += `<br>Loaded Txt: ${files.txtFiles.length}`;
+
+            // #image_index_sliderを読み込んだファイルの数量に合わせて変更する
+            document.querySelector('#image_index_slider').max = files.jpgFiles.length - 1;
+            document.querySelector('#image_index_slider').min = 0;
+            document.querySelector('#image_index_slider').value = 0;
         })
         .catch(err => console.error(err));
 
     // Reset the message and CSS
-    message.textContent = 'Drop folder here';
     dropzone.style.backgroundColor = null; // Reset CSS here
 
 }, false);

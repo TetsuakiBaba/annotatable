@@ -1,6 +1,8 @@
+var version = `
+last modified: 2023/06/20 21:11:01
+`;
+
 let mode_multiple_labels = false;
-
-
 let canvas = {
     width: 400,
     height: 400
@@ -19,6 +21,8 @@ function setup() {
     let parentElement = canvasElement.parentNode;
     let p5canvas = createCanvas(canvasElement.clientWidth, canvasElement.clientWidth * 9 / 16);
     p5canvas.parent('#canvas');
+
+    document.querySelector('#version').innerHTML = version;
 }
 
 function draw() {
@@ -87,11 +91,15 @@ function draw() {
         }
     }
 
-    // マウス位置を中心に十字の線を描く
-    strokeWeight(1);
-    stroke(0);
-    line(mouseX, 0, mouseX, height);
-    line(0, mouseY, width, mouseY);
+    // canvas上にマウスがあれば
+    if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
+        // マウス位置を中心に十字の線を描く
+        strokeWeight(1);
+        stroke(0);
+        line(mouseX, 0, mouseX, height);
+        line(0, mouseY, width, mouseY);
+
+    }
 
 
 }
@@ -116,6 +124,7 @@ function normalizeBoundingBox(box) {
 
 // クリックした際に呼ばれる関数
 function mousePressed() {
+
     // bb.xにマウスのX座標を代入
     bb.x = mouseX;
     // bb.yにマウスのY座標を代入
@@ -124,8 +133,23 @@ function mousePressed() {
 
 // マウスを離した際に呼ばれる関数
 function mouseReleased() {
+
+    // canvas上にマウスがなければ
+    if (mouseX < 0 || mouseX > width || mouseY < 0 || mouseY > height) {
+        bb = { x: 0, y: 0, w: 0, h: 0 };
+        return;
+    }
+
+    // pressedした時のx,y座標がキャンバス上になければ
+    if (bb.x < 0 || bb.x > width || bb.y < 0 || bb.y > height) {
+        bb = { x: 0, y: 0, w: 0, h: 0 };
+        return;
+    }
+
     bb.w = mouseX - bb.x;
     bb.h = mouseY - bb.y;
+
+
     // bbsにbbを追加
     bb = normalizeBoundingBox(bb);
     if (bb.w * bb.h > 20) {
@@ -225,32 +249,43 @@ function keyPressed() {
 
     // 右矢印キー入力で次の画像を表示
     if (keyCode == RIGHT_ARROW) {
-        console.log("RIGHT_ARROW");
-        if (loaded_files) {
-            index++;
-            if (index < loaded_files.jpgFiles.length) {
-                console.log(loaded_files.jpgFiles[index]);
-                //img = loadImage(loaded_files.jpgFiles[index]);
-                loadAnnotations();
-            }
-            else {
-                index = loaded_files.jpgFiles.length - 1;
-            }
-        }
+        forwardImage();
     }
     // 左矢印キー入力で前の画像を表示
     if (keyCode == LEFT_ARROW) {
-        console.log("LEFT_ARROW");
-        if (loaded_files) {
-            index--;
-            if (index >= 0) {
-                console.log(loaded_files.jpgFiles[index]);
-                //img = loadImage(loaded_files.jpgFiles[index]);
-                loadAnnotations();
-            }
-            else {
-                index = 0;
-            }
+        backImage();
+    }
+}
+
+function forwardImage() {
+    if (loaded_files) {
+        index++;
+        if (index < loaded_files.jpgFiles.length) {
+            setImageIndex(index);
+        }
+        else {
+            index = loaded_files.jpgFiles.length - 1;
+        }
+    }
+}
+function backImage() {
+    if (loaded_files) {
+        index--;
+        if (index >= 0) {
+            setImageIndex(index);
+        }
+        else {
+            index = 0;
+        }
+    }
+}
+
+function setImageIndex(i) {
+    if (loaded_files) {
+        if (i >= 0 && i < loaded_files.jpgFiles.length) {
+            index = i;
+            document.querySelector('#image_index_slider').value = index;
+            loadAnnotations();
         }
     }
 }
