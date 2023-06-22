@@ -1,6 +1,6 @@
 # annotatable
 
-![teaser](teaser.gif)
+![teaser](teaser.png)
 
 ## Getting started
 ```
@@ -9,6 +9,10 @@ cd annotatable
 npm install
 npm start
 ```
+Drag and drop a folder containing images and annotations to the app.
 
 ## Change labels
 You can change labels in `src/labels.js`.
+
+## Supported annotation format
+ * YOLO Objecct Dectection: [label id] [x] [y] [width] [height]
