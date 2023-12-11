@@ -14,7 +14,7 @@ Drag and drop a folder containing images and annotations to the app.
 ## Change labels
 
 ### default labels
-You can change default labels in `src/labels.js`.
+You can change default labels in `src/labels.txt`.
 
 ### dynamic loading
 You can change labels by drag and drop a file containing labels to the app.
