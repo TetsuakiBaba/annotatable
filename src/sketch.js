@@ -1,5 +1,5 @@
 var version = `
-last modified: 2023/06/20 21:11:01
+last modified: 2023/12/11 15:06:07
 `;
 
 let mode_multiple_labels = false;
@@ -17,15 +17,30 @@ let bb = {
 }
 
 function setup() {
+    colorMode(HSB, 360, 100, 100, 1);  // HSBモードを設定
+
     let canvasElement = document.getElementById('canvas');
     let parentElement = canvasElement.parentNode;
     let p5canvas = createCanvas(canvasElement.clientWidth, canvasElement.clientWidth * 9 / 16);
     p5canvas.parent('#canvas');
-
     document.querySelector('#version').innerHTML = version;
+
+    p5canvas.mouseOver(hideCursor);
+    p5canvas.mouseOut(showCursor);
+
+    loadLabelsFile('./src/labels.txt');
+}
+
+function hideCursor() {
+    document.body.style.cursor = 'none';
+}
+
+function showCursor() {
+    document.body.style.cursor = 'default';
 }
 
 function draw() {
+    let flg_on_the_bb = false;
     background(220);
 
     if (img) {
@@ -43,7 +58,26 @@ function draw() {
     }
 
     for (let b of bbs) {
+        // bb.labelsが複数の場合は単色で塗りつぶす
+        let class_color;
+        let class_color_more_alpha;
+        let class_color_no_alpha;
+        if (b.labels.length > 1) {
+            class_color = color('rgba(50, 50, 50, 0.6)');
+            class_color_more_alpha = color('rgba(50, 50, 50, 0.3)');
+            class_color_no_alpha = color('rgba(50, 50, 50, 1.0)');
+        }
+        else {
+            class_color = color(`${label_colors[b.labels[0]]}`);
+            class_color_more_alpha = color(`${label_colors[b.labels[0]]}`);
+            class_color_more_alpha.setAlpha(0.2);
+            class_color_no_alpha = color(`${label_colors[b.labels[0]]}`);
+            class_color_no_alpha.setAlpha(1.0);
+        }
+
+
         let b_display = {};
+
         b_display.x = (b.x - b.w / 2) * width;
         b_display.y = (b.y - b.h / 2) * height;
         b_display.w = b.w * width;
@@ -52,41 +86,44 @@ function draw() {
         for (l of b.labels) {
             b_display.labels.push(labels[Number(l)]);
         }
-        noFill();
-        strokeWeight(2);
-        stroke(0);
+
+
+        strokeWeight(1);
+        stroke(class_color_no_alpha);
+        fill(class_color_more_alpha);
         rect(b_display.x, b_display.y, b_display.w, b_display.h);
+
+
+        fill(class_color_no_alpha);
         rect(b_display.x, b_display.y - 16, b_display.w, 16);
         // bb.labelをばうんでぃうんぼっくすの上に表示
         //console.log(b.labels[0]);
-        fill(0);
+        fill(255);
         textSize(12);
         textAlign(LEFT, TOP);
         noStroke();
         text(b_display.labels, b_display.x + 2, b_display.y - 16);
-    }
 
-    // bbsの上にマウスがある時
-    for (let b of bbs) {
-        let b_display = {};
-        b_display.x = (b.x - b.w / 2) * width;
-        b_display.y = (b.y - b.h / 2) * height;
-        b_display.w = b.w * width;
-        b_display.h = b.h * height;
 
+        // bbsの上にマウスがある時
         if (mouseX > b_display.x && mouseX < b_display.x + b_display.w && mouseY > b_display.y && mouseY < b_display.y + b_display.h) {
             // 線の太さを指定
-            strokeWeight(2);
-            fill(100, 250, 100, 100);
-            stroke(0);
+            fill(class_color);
             // bb.x, bb.yを基準に四角を描く
             rect(b_display.x, b_display.y, b_display.w, b_display.h);
 
+            flg_on_the_bb = true;
             // もしマウスがクリックされたら、bbsからそのbbを削除
             if (mouseIsPressed) {
                 bbs = bbs.filter((b2) => b2 != b);
                 saveAnnotations();
             }
+        }
+        else {
+            fill(class_color_more_alpha)
+            // bb.x, bb.yを基準に四角を描く
+            rect(b_display.x, b_display.y, b_display.w, b_display.h);
+
 
         }
     }
@@ -94,15 +131,38 @@ function draw() {
     // canvas上にマウスがあれば
     if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
         // マウス位置を中心に十字の線を描く
-        strokeWeight(1);
-        stroke(0);
-        line(mouseX, 0, mouseX, height);
-        line(0, mouseY, width, mouseY);
 
+
+        if (flg_on_the_bb == false) {
+            noStroke();
+            fill(color('rgba(0, 200, 0, 0.5)'));
+            // text('+', mouseX, mouseY);
+            strokeWeight(1.0);
+            stroke(color('rgba(0, 200, 0, 0.5)'));
+            line(mouseX, 0, mouseX, height);
+            line(0, mouseY, width, mouseY);
+
+        }
+        else {
+            noStroke();
+            fill(color('rgba(200, 0, 0, 0.5)'));
+            // text('x', mouseX, mouseY);
+            strokeWeight(1.0);
+            stroke(color('rgba(200, 0, 0, 0.5)'));
+            line(mouseX, 0, mouseX, height);
+            line(0, mouseY, width, mouseY);
+
+        }
     }
 
 
 }
+
+function setHalfAlpha(color) {
+    return color.setAlpha(0.1);
+}
+
+
 
 function normalizeBoundingBox(box) {
     let { x, y, w, h } = box;
@@ -129,25 +189,60 @@ function mousePressed() {
     bb.x = mouseX;
     // bb.yにマウスのY座標を代入
     bb.y = mouseY;
+
+    // もし bbにマイナス値が含まれている場合はその箇所を0にする
+    if (bb.x < 0) {
+        bb.x = 0;
+    }
+    else if (bb.x > width) {
+        bb.x = width;
+    }
+
+    if (bb.y < 0) {
+        bb.y = 0;
+    }
+    else if (bb.y > height) {
+        bb.y = height;
+    }
 }
 
 // マウスを離した際に呼ばれる関数
 function mouseReleased() {
 
-    // canvas上にマウスがなければ
+    // canvas上にマウスがないが，pressedしたときのx,y座標がキャンバス上にあれば
     if (mouseX < 0 || mouseX > width || mouseY < 0 || mouseY > height) {
-        bb = { x: 0, y: 0, w: 0, h: 0 };
-        return;
-    }
+        if (bb.x > 0 && bb.x < width && bb.y > 0 && bb.y < height) {
+            bb.w = mouseX - bb.x;
+            bb.h = mouseY - bb.y;
+            if (mouseX < 0) {
+                bb.w = bb.x;
+            }
+            else if (mouseX > width) {
+                bb.w = width - bb.x;
+            }
+            else if (mouseY < 0) {
+                bb.h = bb.y;
+            }
+            else if (mouseY > height) {
+                bb.h = height - bb.y;
+            }
 
+        }
+        else {
+            bb = { x: 0, y: 0, w: 0, h: 0 };
+            return;
+        }
+
+    }
     // pressedした時のx,y座標がキャンバス上になければ
-    if (bb.x < 0 || bb.x > width || bb.y < 0 || bb.y > height) {
+    else if (bb.x < 0 || bb.x > width || bb.y < 0 || bb.y > height) {
         bb = { x: 0, y: 0, w: 0, h: 0 };
         return;
     }
-
-    bb.w = mouseX - bb.x;
-    bb.h = mouseY - bb.y;
+    else {
+        bb.w = mouseX - bb.x;
+        bb.h = mouseY - bb.y;
+    }
 
 
     // bbsにbbを追加
@@ -157,6 +252,7 @@ function mouseReleased() {
         // labelsに含まれるbutton要素で、getAttribute('checked')がtrueのもののidをvaluesに代入
         let buttons = document.querySelectorAll('button');
         let values = [];
+
 
         buttons.forEach(button => {
             if (button.getAttribute('checked') === 'true') {
@@ -173,7 +269,6 @@ function mouseReleased() {
         bb.w = bb.w / width;
         bb.h = bb.h / height;
         bb.labels = values;
-        console.log(values);
         bbs.push({ ...bb });
         saveAnnotations();
     }
@@ -185,7 +280,14 @@ function mouseReleased() {
 
 function adjustCanvasSize() {
     if (img) {
-        resizeCanvas(width, img.height * (width / img.width));
+        let canvasElement = document.getElementById('canvas');
+        let w_new = canvasElement.clientWidth;
+        resizeCanvas(w_new, img.height * (w_new / img.width));
+    }
+    else {
+        let canvasElement = document.getElementById('canvas');
+        let w_new = canvasElement.clientWidth;
+        resizeCanvas(w_new, w_new * 9 / 16);
     }
 }
 
@@ -207,7 +309,6 @@ function saveAnnotations() {
 
     // bbs array to formatted string
     let write_data = bbs.map(bb => {
-        console.log({ bb });
         return `${bb.labels.join(' ')} ${bb.x} ${bb.y} ${bb.w} ${bb.h}`;
     }).join('\n');
 
@@ -217,7 +318,7 @@ function saveAnnotations() {
         if (err) {
             return console.error(err);
         }
-        console.log('File saved successfully!');
+        //console.log('File saved successfully!');
     });
 
 }
@@ -226,15 +327,12 @@ function loadAnnotations() {
     img = loadImage(loaded_files.jpgFiles[index], adjustCanvasSize, imageLoadError);
     let txt_file_name = loaded_files.jpgFiles[index].replace(/\.jpg$/, ".txt");
     if (fs.existsSync(txt_file_name)) {
-        console.log('The file exists.');
+        //console.log('The file exists.');
         bbs = readBoundingBoxesFile(txt_file_name);
     } else {
-        console.log('The file does not exist.');
+        //console.log('The file does not exist.');
         bbs = [];
     }
-
-
-
 }
 
 function imageLoadError() {
@@ -244,7 +342,7 @@ function imageLoadError() {
 function keyPressed() {
     if (key == ' ') {
         adjustCanvasSize();
-        console.log({ loaded_files });
+        //        console.log({ loaded_files });
     }
 
     // 右矢印キー入力で次の画像を表示
@@ -291,7 +389,7 @@ function setImageIndex(i) {
 }
 
 function toggleMultipleLabelsMode(dom) {
-    console.log(dom.checked);
+    //console.log(dom.checked);
     mode_multiple_labels = dom.checked;
     if (mode_multiple_labels == false) {
         resetAllLabelToggles();
@@ -302,9 +400,11 @@ function resetAllLabelToggles() {
     let buttons = document.querySelector('#labels').querySelectorAll('button');
     buttons.forEach(button => {
         button.setAttribute('checked', false);
-        if (button.classList.contains('btn-primary')) {
-            button.classList.remove('btn-primary');
-            button.classList.add('btn-secondary');
+        if (button.classList.contains('btn-success')) {
+            button.classList.remove('btn-success');
+            button.classList.add('btn-light');
         }
     });
 }
+
+// windowサイズが変更された場合

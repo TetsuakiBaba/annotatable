@@ -1,5 +1,5 @@
 # annotatable
-
+annotatable is a simple image annotation tool for object detection.
 ![teaser](teaser.png)
 
 ## Getting started

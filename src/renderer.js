@@ -7,8 +7,112 @@ var g_value = "test";
 var img;
 var loaded_files;
 
+// label_colorsという名前で100個の色を用意．色はカラフルで彩度を抑えたもの
+var label_colors = [];
 
 let dropzone = document.getElementById('dropzone');
+dropzone.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    dropzone.style.backgroundColor = '#ccc'; // Change CSS here as needed
+    return false;
+}, false);
+dropzone.addEventListener('dragleave', (event) => {
+    event.preventDefault();
+    dropzone.style.backgroundColor = null; // Reset CSS here
+    return false;
+}, false);
+dropzone.addEventListener('drop', (event) => {
+    document.querySelector('#directory_information').innerHTML = `Loaded Directory: ${event.dataTransfer.files[0].path}`;
+    getJpgAndTxtFiles(event.dataTransfer.files[0].path)
+        .then(async (files) => {
+            loaded_files = files;
+            loadAnnotations();
+            document.querySelector('#directory_information').innerHTML += `<br>Loaded Image: ${files.jpgFiles.length}`;
+            document.querySelector('#directory_information').innerHTML += `<br>Loaded Txt: ${files.txtFiles.length}`;
+
+            // #image_index_sliderを読み込んだファイルの数量に合わせて変更する
+            document.querySelector('#image_index_slider').max = files.jpgFiles.length - 1;
+            document.querySelector('#image_index_slider').min = 0;
+            document.querySelector('#image_index_slider').value = 0;
+        })
+        .catch(err => console.error(err));
+
+    // Reset the message and CSS
+    dropzone.style.backgroundColor = null; // Reset CSS here
+}, false);
+
+var labels = [];
+
+let dropzone_label = document.getElementById('dropzone_label');
+dropzone_label.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    dropzone_label.style.backgroundColor = '#ccc'; // Change CSS here as needed
+    return false;
+}, false);
+dropzone_label.addEventListener('dragleave', (event) => {
+    event.preventDefault();
+    dropzone_label.style.backgroundColor = null; // Reset CSS here
+    return false;
+}, false);
+dropzone_label.addEventListener('drop', (event) => {
+    // dropされたファイルの拡張子をチェック
+    const ext = path.extname(event.dataTransfer.files[0].path);
+
+    // extがtxtの場合だけ処理をする
+    if (ext === '.txt') {
+        // #labels を空にする
+        document.querySelector('#labels').innerHTML = "";
+        loadLabelsFile(event.dataTransfer.files[0].path);
+    }
+    else {
+        alert("txtファイルをドロップしてください");
+    }
+    // Reset the message and CSS
+    dropzone_label.style.backgroundColor = null; // Reset CSS here
+}, false);
+
+function loadLabelsFile(filePath) {
+    labels = [];
+    // ファイルを読み込む
+    labels = readLabelsFile(filePath);
+
+    // labelsをトグルボタンにして #labels に追加する
+    labels.forEach((label) => {
+        let elem = document.createElement("button");
+        elem.textContent = label;
+        elem.setAttribute("class", "btn btn-sm btn-light m-1");
+        elem.setAttribute("type", "button");
+        elem.setAttribute("id", label);
+        elem.setAttribute("onclick", "toggleLabel(this.id)");
+        elem.setAttribute("checked", false);
+        document.querySelector('#labels').appendChild(elem);
+    });
+
+    label_colors = [];
+    for (let i = 0; i < labels.length; i++) {
+        let hue = parseInt((i * 360 / 20) % 360);  // 360を超えないようにする
+
+        let saturation = 50;
+        let brightness = 50;
+        let mycolor = color(`hsba(${hue}, ${saturation}%, ${brightness}%, 0.6)`);
+        // color をRGBに変換
+        label_colors.push(mycolor);
+    }
+
+}
+function readLabelsFile(filePath) {
+    const data = fs.readFileSync(filePath, 'utf-8');
+    const labels = data.split('\n');
+    // labelsに空白が含まれている場合は削除する
+    for (let i = 0; i < labels.length; i++) {
+        if (labels[i] == "") {
+            labels.splice(i, 1);
+        }
+    }
+    return labels;
+}
+
+
 let listing = document.getElementById("listing");
 
 function scanFiles(item, container) {
@@ -28,52 +132,7 @@ function scanFiles(item, container) {
     }
 }
 
-document.addEventListener('dragover', (event) => {
-    event.preventDefault();
-    dropzone.style.backgroundColor = '#ccc'; // Change CSS here as needed
 
-    //console.log(event);
-    // Get the file name
-    //message.textContent = 'Releasing will drop the folder here';
-
-    return false;
-}, false);
-
-document.addEventListener('dragleave', (event) => {
-    event.preventDefault();
-    dropzone.style.backgroundColor = null; // Reset CSS here
-
-});
-
-
-
-document.addEventListener('drop', (event) => {
-    document.querySelector('#directory_information').innerHTML = `Loaded Directory: ${event.dataTransfer.files[0].path}`;
-    getJpgAndTxtFiles(event.dataTransfer.files[0].path)
-        .then(async (files) => {
-
-            loaded_files = files;
-            //console.log('jpg files:', files.jpgFiles);
-            //console.log('txt files:', files.txtFiles);
-            loadAnnotations();
-            // img = await loadImage(files.jpgFiles[0]);
-            // bbs = readBoundingBoxesFile(files.txtFiles[0]);
-
-
-            document.querySelector('#directory_information').innerHTML += `<br>Loaded Image: ${files.jpgFiles.length}`;
-            document.querySelector('#directory_information').innerHTML += `<br>Loaded Txt: ${files.txtFiles.length}`;
-
-            // #image_index_sliderを読み込んだファイルの数量に合わせて変更する
-            document.querySelector('#image_index_slider').max = files.jpgFiles.length - 1;
-            document.querySelector('#image_index_slider').min = 0;
-            document.querySelector('#image_index_slider').value = 0;
-        })
-        .catch(err => console.error(err));
-
-    // Reset the message and CSS
-    dropzone.style.backgroundColor = null; // Reset CSS here
-
-}, false);
 
 
 function readBoundingBoxesFile(filePath) {
@@ -124,25 +183,8 @@ function getJpgAndTxtFiles(dir) {
     });
 }
 
-function readLabelsFile(filePath) {
-    const data = fs.readFileSync(filePath, 'utf-8');
-    const labels = data.split('\n');
 
-    return labels;
-}
 
-let labels = readLabelsFile('src/labels.txt');
-// labelsをトグルボタンにして #labels に追加する
-labels.forEach((label) => {
-    let elem = document.createElement("button");
-    elem.textContent = label;
-    elem.setAttribute("class", "btn btn-sm btn-secondary m-1");
-    elem.setAttribute("type", "button");
-    elem.setAttribute("id", label);
-    elem.setAttribute("onclick", "toggleLabel(this.id)");
-    elem.setAttribute("checked", false);
-    document.querySelector('#labels').appendChild(elem);
-});
 
 function toggleLabel(id) {
 
@@ -153,18 +195,16 @@ function toggleLabel(id) {
         resetAllLabelToggles();
     }
     // checkedのとき
-    if (elem.classList.contains('btn-secondary')) {
-        elem.classList.remove('btn-secondary');
-        elem.classList.add('btn-primary');
+    if (elem.classList.contains('btn-light')) {
+        elem.classList.remove('btn-light');
+        elem.classList.add('btn-success');
         elem.setAttribute("checked", true);
     }
     // checkedが外れた時
     else {
-        elem.classList.remove('btn-primary');
-        elem.classList.add('btn-secondary');
+        elem.classList.remove('btn-success');
+        elem.classList.add('btn-light');
         elem.setAttribute("checked", false);
     }
 }
 
-
-console.log(labels);
