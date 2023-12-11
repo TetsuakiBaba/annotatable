@@ -1,5 +1,5 @@
 var version = `
-last modified: 2023/12/11 15:06:07
+last modified: 2023/12/11 17:37:46
 `;
 
 let mode_multiple_labels = false;
@@ -28,7 +28,8 @@ function setup() {
     p5canvas.mouseOver(hideCursor);
     p5canvas.mouseOut(showCursor);
 
-    loadLabelsFile('./src/labels.txt');
+
+    loadLabelsFile(__dirname + '/labels.txt');
 }
 
 function hideCursor() {
@@ -113,11 +114,7 @@ function draw() {
             rect(b_display.x, b_display.y, b_display.w, b_display.h);
 
             flg_on_the_bb = true;
-            // もしマウスがクリックされたら、bbsからそのbbを削除
-            if (mouseIsPressed) {
-                bbs = bbs.filter((b2) => b2 != b);
-                saveAnnotations();
-            }
+
         }
         else {
             fill(class_color_more_alpha)
@@ -156,6 +153,25 @@ function draw() {
     }
 
 
+}
+
+
+function mouseClicked() {
+    console.log("mouseClicked");
+    for (let b of bbs) {
+        let b_display = {};
+
+        b_display.x = (b.x - b.w / 2) * width;
+        b_display.y = (b.y - b.h / 2) * height;
+        b_display.w = b.w * width;
+        b_display.h = b.h * height;
+        // bbsの上にマウスがある時
+        if (mouseX > b_display.x && mouseX < b_display.x + b_display.w && mouseY > b_display.y && mouseY < b_display.y + b_display.h) {
+            // もしマウスがクリックされたら、bbsからそのbbを削除
+            bbs = bbs.filter((b2) => b2 != b);
+            saveAnnotations();
+        }
+    }
 }
 
 function setHalfAlpha(color) {
