@@ -1,5 +1,5 @@
 var version = `
-last modified: 2023/12/11 17:37:46
+last modified: 2023/12/12 00:38:11
 `;
 
 let mode_multiple_labels = false;
@@ -29,7 +29,22 @@ function setup() {
     p5canvas.mouseOut(showCursor);
 
 
-    loadLabelsFile(__dirname + '/labels.txt');
+    loadLabelsFile(__dirname + '/../sample_dataset/labels.txt');
+    document.querySelector('#directory_information').innerHTML = `Loaded Directory: sample_dataset`;
+    // console.log(__dirname + '/../sample_dataset/data');
+    getJpgAndTxtFiles(__dirname + '/../sample_dataset/data')
+        .then(async (files) => {
+            loaded_files = files;
+            loadAnnotations();
+            document.querySelector('#directory_information').innerHTML += `<br>Loaded Image: ${files.jpgFiles.length}`;
+            document.querySelector('#directory_information').innerHTML += `<br>Loaded Txt: ${files.txtFiles.length}`;
+
+            // #image_index_sliderを読み込んだファイルの数量に合わせて変更する
+            document.querySelector('#image_index_slider').max = files.jpgFiles.length - 1;
+            document.querySelector('#image_index_slider').min = 0;
+            document.querySelector('#image_index_slider').value = 0;
+        })
+        .catch(err => console.error(err));
 }
 
 function hideCursor() {
@@ -89,22 +104,38 @@ function draw() {
         }
 
 
-        strokeWeight(1);
-        stroke(class_color_no_alpha);
-        fill(class_color_more_alpha);
-        rect(b_display.x, b_display.y, b_display.w, b_display.h);
+
+        if (b_display.y - 16 < 0) {
+            strokeWeight(1);
+            stroke(class_color_no_alpha);
+            fill(class_color_more_alpha);
+            rect(b_display.x, b_display.y, b_display.w, b_display.h);
+
+            fill(class_color_no_alpha);
+            rect(b_display.x, b_display.y + b_display.h, b_display.w, 16);
+
+            fill(255);
+            textSize(12);
+            textAlign(LEFT, TOP);
+            noStroke();
+            text(b_display.labels, b_display.x + 2, b_display.y + b_display.h);
+        }
+        else {
+            strokeWeight(1);
+            stroke(class_color_no_alpha);
+            fill(class_color_more_alpha);
+            rect(b_display.x, b_display.y, b_display.w, b_display.h);
 
 
-        fill(class_color_no_alpha);
-        rect(b_display.x, b_display.y - 16, b_display.w, 16);
-        // bb.labelをばうんでぃうんぼっくすの上に表示
-        //console.log(b.labels[0]);
-        fill(255);
-        textSize(12);
-        textAlign(LEFT, TOP);
-        noStroke();
-        text(b_display.labels, b_display.x + 2, b_display.y - 16);
+            fill(class_color_no_alpha);
+            rect(b_display.x, b_display.y - 16, b_display.w, 16);
 
+            fill(255);
+            textSize(12);
+            textAlign(LEFT, TOP);
+            noStroke();
+            text(b_display.labels, b_display.x + 2, b_display.y - 16);
+        }
 
         // bbsの上にマウスがある時
         if (mouseX > b_display.x && mouseX < b_display.x + b_display.w && mouseY > b_display.y && mouseY < b_display.y + b_display.h) {
@@ -156,7 +187,7 @@ function draw() {
 }
 
 
-function mouseClicked() {
+function doubleClicked() {
     console.log("mouseClicked");
     for (let b of bbs) {
         let b_display = {};
@@ -232,12 +263,14 @@ function mouseReleased() {
             bb.h = mouseY - bb.y;
             if (mouseX < 0) {
                 bb.w = bb.x;
+                bb.x = 0;
             }
             else if (mouseX > width) {
                 bb.w = width - bb.x;
             }
             else if (mouseY < 0) {
                 bb.h = bb.y;
+                bb.y = 0;
             }
             else if (mouseY > height) {
                 bb.h = height - bb.y;

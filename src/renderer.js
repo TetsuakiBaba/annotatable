@@ -26,6 +26,9 @@ dropzone.addEventListener('drop', (event) => {
     getJpgAndTxtFiles(event.dataTransfer.files[0].path)
         .then(async (files) => {
             loaded_files = files;
+
+            // 最初の位置に戻す
+            index = 0;
             loadAnnotations();
             document.querySelector('#directory_information').innerHTML += `<br>Loaded Image: ${files.jpgFiles.length}`;
             document.querySelector('#directory_information').innerHTML += `<br>Loaded Txt: ${files.txtFiles.length}`;
@@ -34,12 +37,19 @@ dropzone.addEventListener('drop', (event) => {
             document.querySelector('#image_index_slider').max = files.jpgFiles.length - 1;
             document.querySelector('#image_index_slider').min = 0;
             document.querySelector('#image_index_slider').value = 0;
+
+
+
         })
         .catch(err => console.error(err));
 
     // Reset the message and CSS
     dropzone.style.backgroundColor = null; // Reset CSS here
 }, false);
+
+
+
+
 
 var labels = [];
 

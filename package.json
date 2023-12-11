@@ -15,6 +15,7 @@
   "author": "baba",
   "license": "MIT",
   "dependencies": {
+    "bootstrap": "^5.3.2",
     "electron-squirrel-startup": "^1.0.0"
   },
   "devDependencies": {
