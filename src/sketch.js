@@ -1,5 +1,5 @@
 var version = `
-last modified: 2023/12/12 00:38:11
+last modified: 2023/12/12 17:10:12
 `;
 
 let mode_multiple_labels = false;
@@ -79,9 +79,14 @@ function draw() {
         let class_color_more_alpha;
         let class_color_no_alpha;
         if (b.labels.length > 1) {
-            class_color = color('rgba(50, 50, 50, 0.6)');
-            class_color_more_alpha = color('rgba(50, 50, 50, 0.3)');
-            class_color_no_alpha = color('rgba(50, 50, 50, 1.0)');
+            // class_color = color('rgba(50, 50, 50, 0.6)');
+            // class_color_more_alpha = color('rgba(50, 50, 50, 0.3)');
+            // class_color_no_alpha = color('rgba(50, 50, 50, 1.0)');
+            class_color = color(`${label_colors[b.labels[0]]}`);
+            class_color_more_alpha = color(`${label_colors[b.labels[0]]}`);
+            class_color_more_alpha.setAlpha(0.2);
+            class_color_no_alpha = color(`${label_colors[b.labels[0]]}`);
+            class_color_no_alpha.setAlpha(1.0);
         }
         else {
             class_color = color(`${label_colors[b.labels[0]]}`);
@@ -442,6 +447,8 @@ function toggleMultipleLabelsMode(dom) {
     mode_multiple_labels = dom.checked;
     if (mode_multiple_labels == false) {
         resetAllLabelToggles();
+        // #selected_labelsを空にする
+        document.querySelector('#selected_labels').innerHTML = "";
     }
 }
 
@@ -452,6 +459,19 @@ function resetAllLabelToggles() {
         if (button.classList.contains('btn-success')) {
             button.classList.remove('btn-success');
             button.classList.add('btn-light');
+        }
+    });
+}
+
+function resetAllLabelTogglesExceptMe(me_id) {
+    let buttons = document.querySelector('#labels').querySelectorAll('button');
+    buttons.forEach(button => {
+        if (button.id != me_id) {
+            button.setAttribute('checked', false);
+            if (button.classList.contains('btn-success')) {
+                button.classList.remove('btn-success');
+                button.classList.add('btn-light');
+            }
         }
     });
 }

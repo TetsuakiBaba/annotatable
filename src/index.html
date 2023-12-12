@@ -25,9 +25,6 @@
   <div class="container-fluid mt-4">
     <div class="row">
       <div class="col-4">
-
-
-
         <div class="card">
           <div class="card-body">
             <div class="col-12">
@@ -56,9 +53,19 @@
 
             <hr>
             <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault"
-                onchange="toggleMultipleLabelsMode(this);">
-              <label class="form-check-label" for="flexSwitchCheckDefault">Enable multiple Labels</label>
+              <div class="row">
+                <div class="col-12">
+                  <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault"
+                    onchange="toggleMultipleLabelsMode(this);">
+                  <label class="form-check-label" for="flexSwitchCheckDefault">Enable multiple
+                    Labels</label>
+                </div>
+                <div class="col-12">
+                  <span id="selected_labels" class="text-muted small">
+                    <span class="badge rounded-pill text-bg-success">person</span>
+                  </span>
+                </div>
+              </div>
             </div>
             <hr>
             <div id="labels">

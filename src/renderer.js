@@ -37,9 +37,6 @@ dropzone.addEventListener('drop', (event) => {
             document.querySelector('#image_index_slider').max = files.jpgFiles.length - 1;
             document.querySelector('#image_index_slider').min = 0;
             document.querySelector('#image_index_slider').value = 0;
-
-
-
         })
         .catch(err => console.error(err));
 
@@ -100,7 +97,7 @@ function loadLabelsFile(filePath) {
 
     label_colors = [];
     for (let i = 0; i < labels.length; i++) {
-        let hue = parseInt((i * 360 / 20) % 360);  // 360を超えないようにする
+        let hue = parseInt((5 * i + i * 360 / 5) % 360);  // 360を超えないようにする
 
         let saturation = 50;
         let brightness = 50;
@@ -204,17 +201,34 @@ function toggleLabel(id) {
     if (mode_multiple_labels == false) {
         resetAllLabelToggles();
     }
+
     // checkedのとき
     if (elem.classList.contains('btn-light')) {
         elem.classList.remove('btn-light');
         elem.classList.add('btn-success');
         elem.setAttribute("checked", true);
+
+
     }
     // checkedが外れた時
     else {
         elem.classList.remove('btn-success');
         elem.classList.add('btn-light');
         elem.setAttribute("checked", false);
+    }
+
+    // #selected_labelsにある全てのspanを削除
+    document.querySelector('#selected_labels').innerHTML = "";
+
+    // すべてのlabels内のボタンを取得して，その中でcheckedのattributeがtrueになっているものだけを取得する
+    let checked_labels = document.querySelectorAll('#labels button[checked="true"]');
+    // console.log(checked_labels);
+    for (let i = 0; i < checked_labels.length; i++) {
+        let badge = document.createElement("span");
+        badge.textContent = checked_labels[i].id;
+        badge.setAttribute("class", "badge rounded-pill text-bg-success");
+        badge.setAttribute("id", checked_labels[i].id + "_badge");
+        document.querySelector('#selected_labels').appendChild(badge);
     }
 }
 
