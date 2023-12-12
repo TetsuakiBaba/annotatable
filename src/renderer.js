@@ -106,6 +106,11 @@ function loadLabelsFile(filePath) {
         label_colors.push(mycolor);
     }
 
+    // filePathからファイル名だけを取り出す
+    let filePathSplit = filePath.split('/');
+    let filePathSplitLast = filePathSplit[filePathSplit.length - 1];
+    document.querySelector('#label_information').innerHTML = `File name: ${filePathSplitLast}<br>Loaded Labels: ${labels.length}`;
+
 }
 function readLabelsFile(filePath) {
     const data = fs.readFileSync(filePath, 'utf-8');
