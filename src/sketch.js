@@ -1,5 +1,5 @@
 var version = `
-last modified: 2023/12/12 17:25:08
+last modified: 2024/01/16 09:40:05
 `;
 
 let mode_multiple_labels = false;
@@ -149,6 +149,42 @@ function draw() {
             // bb.x, bb.yを基準に四角を描く
             rect(b_display.x, b_display.y, b_display.w, b_display.h);
 
+            // バウンディングボックスの4点の座標を表示
+            fill(255);
+            textSize(6);
+            noStroke();
+            textAlign(LEFT, TOP);
+            let bbpos = [
+                { x: b_display.x / width, y: b_display.y / height },
+                { x: (b_display.x + b_display.w) / width, y: b_display.y / height },
+                { x: b_display.x / width, y: (b_display.y + b_display.h) / height },
+                { x: (b_display.x + b_display.w) / width, y: (b_display.y + b_display.h) / height },
+            ]
+
+            text(`(${bbpos[0].x.toFixed(2)}, ${bbpos[0].y.toFixed(2)})`,
+                b_display.x, b_display.y);
+
+            textAlign(RIGHT, TOP);
+            text(`(${bbpos[1].x.toFixed(2)}, ${bbpos[1].y.toFixed(2)})`,
+                b_display.x + b_display.w, b_display.y);
+
+            textAlign(LEFT, BOTTOM);
+            text(`(${bbpos[2].x.toFixed(2)}, ${bbpos[2].y.toFixed(2)})`,
+                b_display.x, b_display.y + b_display.h);
+
+            textAlign(RIGHT, BOTTOM);
+            text(`(${bbpos[3].x.toFixed(2)}, ${bbpos[3].y.toFixed(2)})`,
+                b_display.x + b_display.w, b_display.y + b_display.h);
+
+
+            stroke(color('rgba(255, 255, 255, 0.2)'));
+            line(b_display.x, b_display.y, b_display.x + b_display.w, b_display.y + b_display.h);
+            line(b_display.x + b_display.w, b_display.y, b_display.x, b_display.y + b_display.h);
+
+            noStroke();
+            textSize(8);
+            textAlign(CENTER, CENTER);
+            text(`Double click to delete`, b_display.x + b_display.w / 2, b_display.y + b_display.h / 2);
             flg_on_the_bb = true;
 
         }
@@ -165,13 +201,12 @@ function draw() {
     if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
         // マウス位置を中心に十字の線を描く
 
-
         if (flg_on_the_bb == false) {
             noStroke();
-            fill(color('rgba(0, 200, 0, 0.5)'));
+            fill(color('rgba(0, 150, 0, 0.5)'));
             // text('+', mouseX, mouseY);
-            strokeWeight(1.0);
-            stroke(color('rgba(0, 200, 0, 0.5)'));
+            strokeWeight(2.0);
+            stroke(color('rgba(0, 150, 0, 0.5)'));
             line(mouseX, 0, mouseX, height);
             line(0, mouseY, width, mouseY);
 
@@ -180,7 +215,7 @@ function draw() {
             noStroke();
             fill(color('rgba(200, 0, 0, 0.5)'));
             // text('x', mouseX, mouseY);
-            strokeWeight(1.0);
+            strokeWeight(2.0);
             stroke(color('rgba(200, 0, 0, 0.5)'));
             line(mouseX, 0, mouseX, height);
             line(0, mouseY, width, mouseY);
@@ -273,7 +308,8 @@ function mouseReleased() {
             else if (mouseX > width) {
                 bb.w = width - bb.x;
             }
-            else if (mouseY < 0) {
+
+            if (mouseY < 0) {
                 bb.h = bb.y;
                 bb.y = 0;
             }
@@ -337,6 +373,8 @@ function adjustCanvasSize() {
         let canvasElement = document.getElementById('canvas');
         let w_new = canvasElement.clientWidth;
         resizeCanvas(w_new, img.height * (w_new / img.width));
+        document.querySelector('#image_information').innerHTML = `Loaded Image: ${parseInt(index) + 1}/${loaded_files.jpgFiles.length}<br>Image: <a href="${loaded_files.jpgFiles[index]}" target="_blank">${loaded_files.jpgFiles[index]}</a><br>Txt: <a href="${loaded_files.txtFiles[index]}" target="_blank">${loaded_files.txtFiles[index]}</a><br>Image size: ${img.width} x ${img.height}`;
+        document.querySelector('#bb_count').innerHTML = `Bounding box count: ${bbs.length}`;
     }
     else {
         let canvasElement = document.getElementById('canvas');
@@ -373,6 +411,7 @@ function saveAnnotations() {
             return console.error(err);
         }
         //console.log('File saved successfully!');
+        document.querySelector('#bb_count').innerHTML = `Bounding box count: ${bbs.length}`;
     });
 
 }
@@ -383,6 +422,7 @@ function loadAnnotations() {
     if (fs.existsSync(txt_file_name)) {
         //console.log('The file exists.');
         bbs = readBoundingBoxesFile(txt_file_name);
+
     } else {
         //console.log('The file does not exist.');
         bbs = [];

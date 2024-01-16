@@ -151,18 +151,25 @@ function readBoundingBoxesFile(filePath) {
     const data = fs.readFileSync(filePath, 'utf-8');
     const lines = data.split('\n').filter(line => line.trim() !== ''); // Ignore empty lines
 
-
     let bbs = lines.map(line => {
         let items = line.split(' ');
 
         let lastItems = items.splice(-4); // Get the last 4 items (x, y, w, h)
-        return {
+        ret = {
             labels: items, // The rest are labels
             x: parseFloat(lastItems[0]),
             y: parseFloat(lastItems[1]),
             w: parseFloat(lastItems[2]),
             h: parseFloat(lastItems[3])
         };
+
+        if (ret.x < 0 || ret.y < 0 || ret.w < 0 || ret.h < 0) {
+            alert('Alert: Bounding box coordinates must be positive');
+        }
+        if (ret.x + ret.w / 2 > 1.0 || ret.y + ret.h / 2 > 1.0 || ret.x + ret.w / 2 < 0.0 || ret.y + ret.h / 2 < 0.0) {
+            alert(`Alert: Bounding box coordinates must be smaller than 1(${ret.x + ret.w}, ${ret.y + ret.h})`);
+        }
+        return ret;
     });
 
     return bbs;
