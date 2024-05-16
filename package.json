@@ -2,7 +2,7 @@
   "name": "annotatable",
   "productName": "annotatable",
   "version": "1.0.0",
-  "description": "My Electron application description",
+  "description": "an Bounding Box Annotator Tool",
   "main": "src/index.js",
   "scripts": {
     "start": "electron-forge start",
@@ -16,7 +16,8 @@
   "license": "MIT",
   "dependencies": {
     "bootstrap": "^5.3.2",
-    "electron-squirrel-startup": "^1.0.0"
+    "electron-squirrel-startup": "^1.0.0",
+    "update-electron-app": "^3.0.0"
   },
   "devDependencies": {
     "@electron-forge/cli": "^6.2.1",

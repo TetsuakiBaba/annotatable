@@ -5,3 +5,5 @@ smartphone
 tablet
 pencil
 cup
+cat
+dog

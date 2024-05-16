@@ -1,5 +1,5 @@
 var version = `
-last modified: 2024/01/16 09:40:05
+last modified: 2024/04/09 00:07:38
 `;
 
 let mode_multiple_labels = false;
@@ -32,19 +32,21 @@ function setup() {
     loadLabelsFile(__dirname + '/../sample_dataset/labels.txt');
     document.querySelector('#directory_information').innerHTML = `Loaded Directory: sample_dataset`;
     // console.log(__dirname + '/../sample_dataset/data');
-    getJpgAndTxtFiles(__dirname + '/../sample_dataset/data')
-        .then(async (files) => {
-            loaded_files = files;
-            loadAnnotations();
-            document.querySelector('#directory_information').innerHTML += `<br>Loaded Image: ${files.jpgFiles.length}`;
-            document.querySelector('#directory_information').innerHTML += `<br>Loaded Txt: ${files.txtFiles.length}`;
+    loadDataset(__dirname + '/../sample_dataset/data');
+    // getJpgAndTxtFiles(__dirname + '/../sample_dataset/data')
+    //     .then(async (files) => {
+    //         loaded_files = files;
+    //         loadAnnotations();
+    //         document.querySelector('#directory_information').innerHTML += `<br>Loaded Image: ${files.jpgFiles.length}`;
+    //         document.querySelector('#directory_information').innerHTML += `<br>Loaded Txt: ${files.txtFiles.length}`;
 
-            // #image_index_sliderを読み込んだファイルの数量に合わせて変更する
-            document.querySelector('#image_index_slider').max = files.jpgFiles.length - 1;
-            document.querySelector('#image_index_slider').min = 0;
-            document.querySelector('#image_index_slider').value = 0;
-        })
-        .catch(err => console.error(err));
+    //         // #image_index_sliderを読み込んだファイルの数量に合わせて変更する
+    //         document.querySelector('#image_index_slider').max = files.jpgFiles.length - 1;
+    //         document.querySelector('#image_index_slider').min = 0;
+    //         document.querySelector('#image_index_slider').value = 0;
+
+    //     })
+    //     .catch(err => console.error(err));
 }
 
 function hideCursor() {
@@ -353,11 +355,26 @@ function mouseReleased() {
             alert('Please select label');
             return;
         }
-        // bbにlabelを追加
+        // bb.x,yはyolo形式では中心座標になるため、bb.w,hそれぞれの半分を加算する
         bb.x = (bb.x + bb.w / 2) / width;
         bb.y = (bb.y + bb.h / 2) / height;
+
+        // bb.wは0-1で表現するため、widthで割る
         bb.w = bb.w / width;
+
+        // bb.x + bb.w/2が1.0より大きければその分を引く
+        if (bb.x + bb.w / 2 > 1.0) {
+            bb.x = bb.x - (bb.x + bb.w / 2 - 1.0);
+        }
+
+        // bb.hは0-1で表現するため、heightで割る
         bb.h = bb.h / height;
+
+        // bb.y + bb.h/2が1.0より大きければその分を引く
+        if (bb.y + bb.h / 2 > 1.0) {
+            bb.y = bb.y - (bb.y + bb.h / 2 - 1.0);
+        }
+
         bb.labels = values;
         bbs.push({ ...bb });
         saveAnnotations();
@@ -373,7 +390,7 @@ function adjustCanvasSize() {
         let canvasElement = document.getElementById('canvas');
         let w_new = canvasElement.clientWidth;
         resizeCanvas(w_new, img.height * (w_new / img.width));
-        document.querySelector('#image_information').innerHTML = `Loaded Image: ${parseInt(index) + 1}/${loaded_files.jpgFiles.length}<br>Image: <a href="${loaded_files.jpgFiles[index]}" target="_blank">${loaded_files.jpgFiles[index]}</a><br>Txt: <a href="${loaded_files.txtFiles[index]}" target="_blank">${loaded_files.txtFiles[index]}</a><br>Image size: ${img.width} x ${img.height}`;
+        document.querySelector('#image_information').innerHTML = `Loaded Image: ${parseInt(index) + parseInt(1)}/${loaded_files.jpgFiles.length}<br>Image: <a href="${loaded_files.jpgFiles[index]}" target="_blank">${loaded_files.jpgFiles[index]}</a><br>Txt: <a href="${loaded_files.txtFiles[index]}" target="_blank">${loaded_files.txtFiles[index]}</a><br>Image size: ${img.width} x ${img.height}`;
         document.querySelector('#bb_count').innerHTML = `Bounding box count: ${bbs.length}`;
     }
     else {
@@ -411,11 +428,18 @@ function saveAnnotations() {
             return console.error(err);
         }
         //console.log('File saved successfully!');
+        if (loaded_files.txtFiles[index] == 'no txt file') {
+
+            // loaded_files.jpgFiles[index]に含まれる.jpgを.txtに置き換える
+            loaded_files.txtFiles[index] = loaded_files.jpgFiles[index].replace(/\.jpg$/, ".txt");
+            document.querySelector('#image_information').innerHTML = `Loaded Image: ${parseInt(index) + parseInt(1)}/${loaded_files.jpgFiles.length}<br>Image: <a href="${loaded_files.jpgFiles[index]}" target="_blank">${loaded_files.jpgFiles[index]}</a><br>Txt: <a href="${loaded_files.txtFiles[index]}" target="_blank">${loaded_files.txtFiles[index]}</a><br>Image size: ${img.width} x ${img.height}`;
+        }
         document.querySelector('#bb_count').innerHTML = `Bounding box count: ${bbs.length}`;
     });
 
 }
 
+// bbの配列bbsに読み込まれたアノテーションを代入する（これは、一つのファイル処理に対してのみ）
 function loadAnnotations() {
     img = loadImage(loaded_files.jpgFiles[index], adjustCanvasSize, imageLoadError);
     let txt_file_name = loaded_files.jpgFiles[index].replace(/\.jpg$/, ".txt");
@@ -426,6 +450,23 @@ function loadAnnotations() {
     } else {
         //console.log('The file does not exist.');
         bbs = [];
+    }
+}
+
+// 現在の画像のアノテーションを削除する
+function clearAnnotations() {
+    let txt_file_name = loaded_files.jpgFiles[index].replace(/\.jpg$/, ".txt");
+    if (fs.existsSync(txt_file_name)) {
+
+        // fsの中身だけ空にする
+        fs.writeFile(txt_file_name, '', (err) => {
+            if (err) {
+                return console.error(err);
+            }
+            //console.log('File deleted successfully!');
+            bbs = [];
+            document.querySelector('#bb_count').innerHTML = `Bounding box count: ${bbs.length}`;
+        });
     }
 }
 
@@ -440,35 +481,78 @@ function keyPressed() {
     }
 
     // 右矢印キー入力で次の画像を表示
-    if (keyCode == RIGHT_ARROW) {
+    if (keyCode == RIGHT_ARROW || key == 'd') {
         forwardImage();
     }
     // 左矢印キー入力で前の画像を表示
-    if (keyCode == LEFT_ARROW) {
+    if (keyCode == LEFT_ARROW || key == 'a') {
         backImage();
     }
 }
+// 
+function forwardImage(option = { go_to_no_txt: false }) {
 
-function forwardImage() {
     if (loaded_files) {
-        index++;
-        if (index < loaded_files.jpgFiles.length) {
-            setImageIndex(index);
+        if (option.go_to_no_txt == false) {
+            index++;
+            if (index < loaded_files.jpgFiles.length) {
+                setImageIndex(index);
+            }
+            else {
+                index = loaded_files.jpgFiles.length - 1;
+            }
         }
-        else {
-            index = loaded_files.jpgFiles.length - 1;
+        else if (option.go_to_no_txt == true) {
+            index++
+            while (index < loaded_files.jpgFiles.length) {
+                console.log(index)
+                let txt_file_name = loaded_files.jpgFiles[index].replace(/\.jpg$/, ".txt");
+                if (fs.existsSync(txt_file_name)) {
+                    index++;
+                }
+                else {
+                    setImageIndex(index);
+                    break;
+                }
+            }
+
+            if (index == loaded_files.jpgFiles.length) {
+                index--;
+                setImageIndex(index);
+            }
         }
     }
 }
-function backImage() {
+function backImage(option = { go_to_no_txt: false }) {
     if (loaded_files) {
-        index--;
-        if (index >= 0) {
-            setImageIndex(index);
+        if (option.go_to_no_txt == false) {
+            index--;
+            if (index >= 0) {
+                setImageIndex(index);
+            }
+            else {
+                index = 0;
+            }
         }
-        else {
-            index = 0;
+        else if (option.go_to_no_txt == true) {
+            index--
+            while (index >= 0) {
+                let txt_file_name = loaded_files.jpgFiles[index].replace(/\.jpg$/, ".txt");
+                if (fs.existsSync(txt_file_name)) {
+                    index--;
+                }
+                else {
+                    setImageIndex(index);
+                    break;
+                }
+            }
+
+            if (index < 0) {
+                index++;
+                setImageIndex(index);
+            }
         }
+
     }
 }
 

@@ -41,11 +41,17 @@ picon_defaults = {
     },
     compass: {
         angle: -30
+    },
+    folder: {
+        text: 'jpg'
     }
 
 }
 class picon {
+    setParameters(options = {}) {
+    }
     constructor(dom_key, name, options = {}) {
+
         let element = document.querySelector(dom_key);
         this.fontsize = parseInt(window.getComputedStyle(element).getPropertyValue('font-size'));
         this.color = window.getComputedStyle(element).getPropertyValue('color');
@@ -133,6 +139,13 @@ class picon {
             }
             this.createSVGCompass(dom_key, options);
         }
+        else if (name === 'folder') {
+            if (typeof options.folder != 'undefined') {
+                if (typeof options.folder.text === 'undefined') options.folder.text = picon_defaults.folder.text;
+            }
+            this.createSVGFolder(dom_key, options);
+        }
+
     }
 
     createSVGClock(dom_key, options = {}) {
@@ -193,7 +206,7 @@ class picon {
                 { color: '#777777' }
             );
         }
-        console.log(options.battery);
+
     }
     createSVGCalendar(dom_key, options = {}) {
         let text = options.calendar.text;
@@ -359,12 +372,55 @@ class picon {
         )
 
     }
+    createSVGFolder(dom_key, options = {}) {
+
+        document.querySelector(`${dom_key}`).innerHTML = '';
+        this.svg = addSVGElement(this.size.w, this.size.h, document.querySelector(dom_key));
+        // debug red frame
+        // this.rect(0, 0, this.size.w, this.size.h, { stroke: 'red', stroke_width: 1 });
+
+        this.path(
+            `
+            M ${this.line_width * 0.5},${this.size.h * 0.4} 
+            L ${this.line_width * 0.5},${this.size.h - this.line_width * 2.0} 
+            Q ${this.line_width * 0.5},${this.size.h - this.line_width * 0.5},
+              ${this.line_width * 0.5 + this.line_width * 2.0},${this.size.h - this.line_width * 0.5} 
+            L ${this.size.w - this.line_width * 0.5 - this.line_width * 2.0},${this.size.h - this.line_width * 0.5} 
+            Q ${this.size.w - this.line_width * 0.5},${this.size.h - this.line_width * 0.5},
+              ${this.size.w - this.line_width * 0.5},${this.size.h - this.line_width * 2.0} 
+            L ${this.size.w - this.line_width * 0.5},${this.size.h * 0.4} 
+            L ${0},${this.size.h * 0.4}
+            `
+        );
+        this.path(
+            `
+            M ${this.line_width * 0.5},${this.size.h * 0.4} 
+            L ${this.line_width * 0.5},${this.size.h * 0.4 - this.line_width * 3.0}
+            Q ${this.line_width * 0.5},${this.size.h * 0.4 - this.line_width * 4.0},
+              ${this.line_width * 0.5 + this.line_width * 1.0},${this.size.h * 0.4 - this.line_width * 4.0} 
+            L ${this.line_width * 0.5 + this.line_width * 1.0},${this.size.h * 0.4 - this.line_width * 4.0}
+            L ${this.size.w * 0.3},${this.size.h * 0.4 - this.line_width * 4}
+            Q ${this.size.w * 0.3 + this.line_width},${this.size.h * 0.4 - this.line_width * 2},
+              ${this.size.w * 0.3 + this.line_width * 2},${this.size.h * 0.4 - this.line_width * 2}
+            L ${this.size.w - this.line_width * 1.5},${this.size.h * 0.4 - this.line_width * 2}
+            Q ${this.size.w - this.line_width * 0.5},${this.size.h * 0.4 - this.line_width * 2},
+              ${this.size.w - this.line_width * 0.5},${this.size.h * 0.4 - this.line_width * 1.0}
+            L ${this.size.w - this.line_width * 0.5},${this.size.h * 0.4}
+            `
+        )
+        this.text(options.folder.text, this.size.w / 2, this.size.h * 0.76,
+            {
+                font_size: this.fontsize * 0.3
+            }
+        )
+
+    }
     createSVGArrow(dom_key, options = {}) {
         let angle = -1 * parseFloat(options.arrow.angle);
         let r = this.size.w * 0.5 - this.line_width * 2.5;
         let l = r; // length of arrow 
         // そのままだと追加してしまうので、対象domの中身は一回クリア
-        document.querySelector(`${dom_key}`).innerHTML = '';
+        document.querySelector(`${dom_key} `).innerHTML = '';
         this.svg = addSVGElement(this.size.w, this.size.h, document.querySelector(dom_key));
         // debug red frame
         //this.rect(0, 0, this.size.w, this.size.h, { stroke: 'red', stroke_width: 1 });
@@ -430,7 +486,7 @@ class picon {
         let volume = parseInt(options.volume.value);
         if (volume > 99) volume = 99;
         if (volume < 0) volume = 0;
-        document.querySelector(`${dom_key}`).innerHTML = '';
+        document.querySelector(`${dom_key} `).innerHTML = '';
         this.svg = addSVGElement(this.size.w, this.size.h, document.querySelector(dom_key));
         // debug red frame
         //this.rect(0, 0, this.size.w, this.size.h, { stroke: 'red', stroke_width: 1 });
@@ -451,7 +507,7 @@ class picon {
             L ${this.line_width * 1.0}, ${this.size.h * (6 / 16)}
             Q ${this.line_width * 0.5}, ${this.size.h * (6 / 16)},
               ${this.line_width * 0.5}, ${this.size.h * (6 / 16) + this.line_width}
-            `
+              `
         );
 
         // show mute mark
@@ -483,7 +539,7 @@ class picon {
 
     createSVGChat(dom_key, options = {}) {
         let angle = -1 * parseInt(options.chat.angle);
-        document.querySelector(`${dom_key}`).innerHTML = '';
+        document.querySelector(`${dom_key} `).innerHTML = '';
         this.svg = addSVGElement(this.size.w, this.size.h, document.querySelector(dom_key));
 
         let r = 0.8 * this.size.w / 2 - this.line_width * 0.5;
@@ -496,15 +552,15 @@ class picon {
 
         e.setAttribute('d', str);
         e.setAttribute('fill', 'transparent');
-        e.setAttribute('stroke', `${this.color}`);
-        e.setAttribute('stroke-width', `${this.line_width}`);
-        e.setAttribute('cx', `${this.size.w / 2}`)
-        e.setAttribute('cy', `${this.size.h / 2}`)
+        e.setAttribute('stroke', `${this.color} `);
+        e.setAttribute('stroke-width', `${this.line_width} `);
+        e.setAttribute('cx', `${this.size.w / 2} `)
+        e.setAttribute('cy', `${this.size.h / 2} `)
         e.setAttribute('transform-origin', `center`)
         e.setAttribute('transform', `rotate(${angle})`)
         this.svg.appendChild(e);
 
-        this.text(options.chat.text, `${this.size.w / 2}`, `${this.size.h * 0.61}`,
+        this.text(options.chat.text, `${this.size.w / 2} `, `${this.size.h * 0.61} `,
             { font_size: this.fontsize * 0.3 })
     }
     createSVGPerson(dom_key, options = {}) {
@@ -512,7 +568,7 @@ class picon {
         if (options.person.size >= 120) options.person.size = 120;
 
         let size = parseInt(options.person.size) / 100;
-        document.querySelector(`${dom_key}`).innerHTML = '';
+        document.querySelector(`${dom_key} `).innerHTML = '';
         this.svg = addSVGElement(this.size.w, this.size.h, document.querySelector(dom_key));
         // debug red frame
         //this.rect(0, 0, this.size.w, this.size.h, { stroke: 'red', stroke_width: 1 });
@@ -550,7 +606,7 @@ class picon {
         let r2 = this.size.w * 0.5 - this.line_width * 3.5;
         let l = r; // length of arrow 
         // そのままだと追加してしまうので、対象domの中身は一回クリア
-        document.querySelector(`${dom_key}`).innerHTML = '';
+        document.querySelector(`${dom_key} `).innerHTML = '';
         this.svg = addSVGElement(this.size.w, this.size.h, document.querySelector(dom_key));
         // debug red frame
         //this.rect(0, 0, this.size.w, this.size.h, { stroke: 'red', stroke_width: 1 });
@@ -973,6 +1029,15 @@ function loadPiconTags(dom_picon) {
                 if ((text = e.getAttribute('data-pc-text')) == null) { text = picon_defaults.filetype.text }
                 new picon(`#${e.id}`, name, {
                     filetype: {
+                        text: text,
+                    }
+                });
+            }
+            else if (name == 'folder') {
+                let text;
+                if ((text = e.getAttribute('data-pc-text')) == null) { text = picon_defaults.folder.text }
+                new picon(`#${e.id}`, name, {
+                    folder: {
                         text: text,
                     }
                 });

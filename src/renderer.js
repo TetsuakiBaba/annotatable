@@ -22,8 +22,20 @@ dropzone.addEventListener('dragleave', (event) => {
     return false;
 }, false);
 dropzone.addEventListener('drop', (event) => {
-    document.querySelector('#directory_information').innerHTML = `Loaded Directory: ${event.dataTransfer.files[0].path}`;
-    getJpgAndTxtFiles(event.dataTransfer.files[0].path)
+    loadDataset(event.dataTransfer.files[0].path);
+    // Reset the message and CSS
+    dropzone.style.backgroundColor = null; // Reset CSS here
+}, false);
+
+function reloadDataset() {
+    let path_to_dataset = document.querySelector('#path_to_dataset').innerHTML;
+    console.log(document.querySelector('#path_to_dataset'));
+    loadDataset(path_to_dataset);
+}
+function loadDataset(path_to_dataset) {
+    document.querySelector('#directory_information').innerHTML = `Loaded Directory: <span id="path_to_dataset">${path_to_dataset}</span>`;
+
+    getJpgAndTxtFiles(path_to_dataset)
         .then(async (files) => {
             loaded_files = files;
 
@@ -37,14 +49,11 @@ dropzone.addEventListener('drop', (event) => {
             document.querySelector('#image_index_slider').max = files.jpgFiles.length - 1;
             document.querySelector('#image_index_slider').min = 0;
             document.querySelector('#image_index_slider').value = 0;
+            console.log({ loaded_files });
         })
         .catch(err => console.error(err));
 
-    // Reset the message and CSS
-    dropzone.style.backgroundColor = null; // Reset CSS here
-}, false);
-
-
+}
 
 
 
@@ -167,7 +176,8 @@ function readBoundingBoxesFile(filePath) {
             alert('Alert: Bounding box coordinates must be positive');
         }
         if (ret.x + ret.w / 2 > 1.0 || ret.y + ret.h / 2 > 1.0 || ret.x + ret.w / 2 < 0.0 || ret.y + ret.h / 2 < 0.0) {
-            alert(`Alert: Bounding box coordinates must be smaller than 1(${ret.x + ret.w}, ${ret.y + ret.h})`);
+            console.warn(`Bounding Box: (x,y,h,w)=(${ret.x},${ret.y},${ret.w},${ret.h}), (${ret.x + ret.w / 2}, ${ret.y + ret.h / 2})`);
+            alert(`Alert: Bounding box coordinates must be smaller than 1.0. Please check console for more information`);
         }
         return ret;
     });
@@ -175,6 +185,7 @@ function readBoundingBoxesFile(filePath) {
     return bbs;
 }
 
+// 渡されたdir pathからjpgとtxtファイルを取得する
 function getJpgAndTxtFiles(dir) {
     return new Promise((resolve, reject) => {
         fs.readdir(dir, (err, files) => {
@@ -186,16 +197,30 @@ function getJpgAndTxtFiles(dir) {
             let jpgFiles = [];
             let txtFiles = [];
 
+            // まずはjpgファイルだけを確認する
             files.forEach(file => {
                 const ext = path.extname(file);
                 const fullPath = path.join(dir, file);
 
                 if (ext === '.jpg') {
                     jpgFiles.push(fullPath);
-                } else if (ext === '.txt') {
-                    txtFiles.push(fullPath);
                 }
             });
+
+            // jpgFilesの一覧に基づいてtxtファイルを確認する
+            jpgFiles.forEach(jpgFile => {
+                const baseName = path.basename(jpgFile, '.jpg');
+                const txtFile = path.join(dir, baseName + '.txt');
+                // txtファイルが存在する場合
+                if (fs.existsSync(txtFile)) {
+                    txtFiles.push(txtFile);
+                }
+                // txtファイルが存在しない場合
+                else {
+                    txtFiles.push('no txt file');
+                }
+            });
+
 
             resolve({ jpgFiles, txtFiles });
         });

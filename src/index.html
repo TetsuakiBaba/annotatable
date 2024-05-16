@@ -30,7 +30,7 @@
             <div class="col-12 mb-3">
               <div id="dropzone_label" class=""
                 style="width:100%;height:50px;border: 2px dashed #aaa;align-items:center;justify-content:left;display:flex;">
-                <i class="fs-2 ms-4" data-pc-id="filetype" data-pc-text="labels"></i>
+                <i class="fs-2 ms-4 me-2" data-pc-id="filetype" data-pc-text="labels"></i>
                 <p class="text-muted lh-sm" style="font-size:0.5rem;margin-bottom:0px;" id="label_information">tset</p>
               </div>
             </div>
@@ -38,7 +38,7 @@
             <div class="col-12">
               <div id="dropzone" class=""
                 style="width:100%;height:50px;border: 2px dashed #aaa;align-items:center;justify-content:left;display:flex;">
-                <i class="fs-2 ms-4 bi bi-folder2"></i>
+                <i class="fs-2 ms-4 me-2" data-pc-id="folder" data-pc-text="jpg"></i>
                 <p class="text-muted lh-sm" style="font-size:0.5rem;margin-bottom:0px;" id="directory_information"> </p>
               </div>
 
@@ -70,6 +70,15 @@
               <div id="labels">
 
               </div>
+              <hr>
+              <div>
+                <button type="button" class="btn btn-warning" onclick="clearAnnotations();">
+                  Clear Bounding Box(es)
+                </button>
+                <button type="button" class="btn btn-success" onclick="reloadDataset();">
+                  Reload dataset
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -79,16 +88,24 @@
           <div class="card-body">
             <div class="row align-items-center text-center mb-2">
               <div class="col-2">
-                <button type="button" class="btn btn-dark" onclick="backImage();"><i data-pc-id="arrow"
-                    data-pc-angle="180"></i></button>
+                <button type="button" class="btn btn-dark" onclick="backImage({go_to_no_txt:true})">
+                  <i data-pc-id="arrow" data-pc-type="chevron" data-pc-angle="180"></i>
+                </button>
+                <button type="button" class="btn btn-dark" onclick="backImage();">
+                  <i data-pc-id="arrow" data-pc-type="normal" data-pc-angle="180"></i>
+                </button>
               </div>
               <div class="col-8">
                 <input type="range" class="form-range" min="0" max="5" step="1" id="image_index_slider"
                   onchange="setImageIndex(this.value)">
               </div>
               <div class="col-2">
-                <button type="button" class="btn btn-dark" onclick="forwardImage();"><i data-pc-id="arrow"
-                    data-pc-angle="0"></i></button>
+                <button type="button" class="btn btn-dark" onclick="forwardImage();">
+                  <i data-pc-id="arrow" data-pc-angle="0" data-pc-type="normal"></i>
+                </button>
+                <button type="button" class="btn btn-dark" onclick="forwardImage({go_to_no_txt:true})">
+                  <i data-pc-id="arrow" data-pc-type="chevron" data-pc-angle="0"></i>
+                </button>
               </div>
             </div>
             <div id="canvas" style="width:100%;"></div>
