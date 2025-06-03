@@ -57,6 +57,11 @@ After execution, three directories `train`, `val` and `test` will be created in 
         └── ...
 ```
 
+## Video Instructions for Mediapipe Object Detection
+
+<div style="position: relative; padding-bottom: 62.5%; height: 0;"><iframe src="https://www.loom.com/embed/a2b6412b9f794e46b09211886a950e8d?sid=601b273f-8249-42d9-ae0f-402caf70b4c0" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
+
+
 ## Thanks
 I'd like to thank the following photographer for providing free images for sample dataset.
  * fauxels: https://www.pexels.com/ja-jp/photo/3228925/
