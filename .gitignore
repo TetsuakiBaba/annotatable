@@ -8,6 +8,7 @@ lerna-debug.log*
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+forge.config.js
 
 # Runtime data
 pids
@@ -91,3 +92,4 @@ typings/
 # Electron-Forge
 out/
 
+sample_dataset/android_figures/
