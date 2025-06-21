@@ -1,7 +1,7 @@
 {
   "name": "annotatable",
   "productName": "annotatable",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "an Bounding Box Annotator Tool",
   "main": "src/index.js",
   "scripts": {

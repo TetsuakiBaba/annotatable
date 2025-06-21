@@ -1,5 +1,5 @@
 var version = `
-last modified: 2024/04/09 00:07:38
+last modified: 2025/06/21 21:32:40
 `;
 
 let mode_multiple_labels = false;
@@ -15,6 +15,9 @@ let bb = {
     h: 0,
     labels: []
 }
+
+// 二重削除防止フラグ
+let isDeleting = false;
 
 function setup() {
     colorMode(HSB, 360, 100, 100, 1);  // HSBモードを設定
@@ -441,8 +444,47 @@ function saveAnnotations() {
 
 // bbの配列bbsに読み込まれたアノテーションを代入する（これは、一つのファイル処理に対してのみ）
 function loadAnnotations() {
-    img = loadImage(loaded_files.jpgFiles[index], adjustCanvasSize, imageLoadError);
-    let txt_file_name = loaded_files.jpgFiles[index].replace(/\.jpg$/, ".txt");
+    // 有効なファイルがあるかチェック
+    if (!loaded_files || !loaded_files.jpgFiles || index >= loaded_files.jpgFiles.length) {
+        console.warn('No valid image files or invalid index');
+        return;
+    }
+
+    const imagePath = loaded_files.jpgFiles[index];
+    console.log('Loading image:', imagePath);
+
+    // ファイルの存在確認
+    if (!fs.existsSync(imagePath)) {
+        console.error('Image file does not exist:', imagePath);
+        imageLoadError();
+        return;
+    }
+
+    // ファイルサイズチェック（0バイトファイルの検出）
+    try {
+        const stats = fs.statSync(imagePath);
+        if (stats.size === 0) {
+            console.error('Image file is empty (0 bytes):', imagePath);
+            imageLoadError();
+            return;
+        }
+        
+        // ファイル拡張子の二重チェック
+        const ext = path.extname(imagePath).toLowerCase();
+        if (!['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'].includes(ext)) {
+            console.error('Unsupported image format:', imagePath);
+            imageLoadError();
+            return;
+        }
+        
+    } catch (error) {
+        console.error('Cannot access image file:', imagePath, error);
+        imageLoadError();
+        return;
+    }
+
+    img = loadImage(imagePath, adjustCanvasSize, imageLoadError);
+    let txt_file_name = imagePath.replace(/\.jpg$/, ".txt");
     if (fs.existsSync(txt_file_name)) {
         //console.log('The file exists.');
         bbs = readBoundingBoxesFile(txt_file_name);
@@ -471,7 +513,51 @@ function clearAnnotations() {
 }
 
 function imageLoadError() {
-    alert('Image load error');
+    console.error('Failed to load image:', loaded_files?.jpgFiles[index]);
+
+    // より詳細なエラー情報を表示
+    const imagePath = loaded_files?.jpgFiles[index];
+    let errorMessage = 'Image load error';
+
+    if (imagePath) {
+        errorMessage += `\nFile: ${imagePath}`;
+
+        // ファイルの存在確認
+        if (fs.existsSync(imagePath)) {
+            errorMessage += '\nFile exists but cannot be loaded (possibly corrupted or unsupported format)';
+        } else {
+            errorMessage += '\nFile does not exist';
+        }
+    } else {
+        errorMessage += '\nNo image file specified';
+    }
+
+    // アラートの代わりにコンソールログと画面上の情報表示を使用
+    console.error(errorMessage);
+
+    // 画面上にエラー情報を表示（アラートの代わり）
+    document.querySelector('#image_information').innerHTML = `
+        <span style="color: red;">❌ Image Load Error</span><br>
+        ${imagePath ? `File: ${imagePath}<br>` : ''}
+        ${imagePath && fs.existsSync(imagePath) ?
+            'File exists but cannot be loaded (possibly corrupted or unsupported format)' :
+            'File does not exist'
+        }
+    `;
+
+    // キャンバスに警告メッセージを表示
+    background(240);
+    fill(200, 0, 0);
+    textAlign(CENTER, CENTER);
+    textSize(16);
+    text('Image Load Error', width / 2, height / 2);
+    textSize(12);
+    text('Check console for details', width / 2, height / 2 + 30);
+    
+    // 破損したファイルを自動的にスキップして次の有効なファイルを探す
+    setTimeout(() => {
+        findNextValidImage();
+    }, 2000); // 2秒後に次のファイルを試す
 }
 
 function keyPressed() {
@@ -488,6 +574,7 @@ function keyPressed() {
     if (keyCode == LEFT_ARROW || key == 'a') {
         backImage();
     }
+    // Cmd+Backspace ショートカットはドキュメントレベルのキーイベントリスナーで処理
 }
 // 
 function forwardImage(option = { go_to_no_txt: false }) {
@@ -557,12 +644,67 @@ function backImage(option = { go_to_no_txt: false }) {
 }
 
 function setImageIndex(i) {
-    if (loaded_files) {
+    if (loaded_files && loaded_files.jpgFiles && loaded_files.jpgFiles.length > 0) {
         if (i >= 0 && i < loaded_files.jpgFiles.length) {
             index = i;
             document.querySelector('#image_index_slider').value = index;
-            loadAnnotations();
+            
+            // 画像ファイルの存在確認を追加
+            const imagePath = loaded_files.jpgFiles[index];
+            if (fs.existsSync(imagePath)) {
+                loadAnnotations();
+            } else {
+                console.warn(`Image file not found: ${imagePath}`);
+                // ファイルが存在しない場合は次の有効なファイルを探す
+                findNextValidImage();
+            }
+        } else {
+            console.warn(`Invalid index: ${i}. Valid range: 0-${loaded_files.jpgFiles.length - 1}`);
         }
+    } else {
+        console.warn('No image files loaded');
+    }
+}
+
+// 次の有効な画像ファイルを探す関数
+function findNextValidImage() {
+    if (!loaded_files || !loaded_files.jpgFiles || loaded_files.jpgFiles.length === 0) {
+        return;
+    }
+    
+    let foundValid = false;
+    let originalIndex = index;
+    
+    // 現在のインデックスから後方検索
+    for (let i = index; i < loaded_files.jpgFiles.length; i++) {
+        if (fs.existsSync(loaded_files.jpgFiles[i])) {
+            index = i;
+            document.querySelector('#image_index_slider').value = index;
+            loadAnnotations();
+            foundValid = true;
+            break;
+        }
+    }
+    
+    // 後方で見つからない場合は前方検索
+    if (!foundValid) {
+        for (let i = 0; i < originalIndex; i++) {
+            if (fs.existsSync(loaded_files.jpgFiles[i])) {
+                index = i;
+                document.querySelector('#image_index_slider').value = index;
+                loadAnnotations();
+                foundValid = true;
+                break;
+            }
+        }
+    }
+    
+    // 有効なファイルが見つからない場合
+    if (!foundValid) {
+        console.error('No valid image files found');
+        document.querySelector('#image_information').innerHTML = 'No valid images available.';
+        document.querySelector('#bb_count').innerHTML = 'Bounding box count: 0';
+        background(220);
     }
 }
 
@@ -601,3 +743,163 @@ function resetAllLabelTogglesExceptMe(me_id) {
 }
 
 // windowサイズが変更された場合
+
+// 現在の画像とアノテーションファイルを削除する
+function deleteCurrentImageAndAnnotation() {
+    if (isDeleting) return;  // 既に削除中なら無視
+    isDeleting = true;
+
+    if (!loaded_files || !loaded_files.jpgFiles || index >= loaded_files.jpgFiles.length) {
+        alert('No image loaded or invalid index.');
+        isDeleting = false;
+        return;
+    }
+
+    // 確認ダイアログを表示
+    const confirmed = confirm('Are you sure you want to delete the current image and annotation file? This action cannot be undone.');
+    if (!confirmed) {
+        isDeleting = false;
+        return;
+    }
+
+    const currentImagePath = loaded_files.jpgFiles[index];
+    const currentTxtPath = currentImagePath.replace(/\.jpg$/, ".txt");
+
+    try {
+        // 画像ファイルを削除
+        if (fs.existsSync(currentImagePath)) {
+            fs.unlinkSync(currentImagePath);
+            console.log(`Deleted image: ${currentImagePath}`);
+        }
+
+        // アノテーションファイルを削除（存在する場合のみ）
+        if (fs.existsSync(currentTxtPath)) {
+            fs.unlinkSync(currentTxtPath);
+            console.log(`Deleted annotation: ${currentTxtPath}`);
+        }
+
+        // ファイルリストから削除
+        loaded_files.jpgFiles.splice(index, 1);
+        if (loaded_files.txtFiles) {
+            // txtFilesのインデックスはjpgFilesと同じインデックスを使用
+            loaded_files.txtFiles.splice(index, 1);
+        }
+
+        // スライダーの最大値を更新
+        const slider = document.querySelector('#image_index_slider');
+        slider.max = Math.max(0, loaded_files.jpgFiles.length - 1);
+
+        // インデックスを調整（削除後のファイル数に合わせる）
+        if (loaded_files.jpgFiles.length === 0) {
+            index = 0;
+        } else if (index >= loaded_files.jpgFiles.length) {
+            index = loaded_files.jpgFiles.length - 1;
+        }
+
+        // ディレクトリ情報を更新
+        document.querySelector('#directory_information').innerHTML =
+            document.querySelector('#directory_information').innerHTML.replace(
+                /Loaded Image: \d+/,
+                `Loaded Image: ${loaded_files.jpgFiles.length}`
+            );
+
+        // 現在のアノテーションをクリア
+        bbs = [];
+
+        // 次の画像を読み込み（ファイルが残っている場合）
+        if (loaded_files.jpgFiles.length > 0) {
+            setImageIndex(index);
+        } else {
+            // すべてのファイルが削除された場合
+            document.querySelector('#image_information').innerHTML = 'No images available.';
+            document.querySelector('#bb_count').innerHTML = 'Bounding box count: 0';
+            // キャンバスをクリア
+            clear();
+            background(220);
+        }
+
+        alert('File(s) deleted successfully.');
+
+    } catch (error) {
+        console.error('Error deleting files:', error);
+        alert(`Error deleting files: ${error.message}`);
+    } finally {
+        isDeleting = false;
+    }
+}
+
+// ダイアログなしで現在の画像とアノテーションファイルを削除する（ショートカット用）
+function deleteCurrentImageAndAnnotationWithoutConfirm() {
+    if (isDeleting) return; // 既に削除中なら無視
+    isDeleting = true;
+
+    if (!loaded_files || !loaded_files.jpgFiles || index >= loaded_files.jpgFiles.length) {
+        console.log('No image loaded or invalid index.');
+        isDeleting = false;
+        return;
+    }
+
+    const currentImagePath = loaded_files.jpgFiles[index];
+    const currentTxtPath = currentImagePath.replace(/\.jpg$/, ".txt");
+
+    try {
+        // 画像ファイルを削除
+        if (fs.existsSync(currentImagePath)) {
+            fs.unlinkSync(currentImagePath);
+            console.log(`Deleted image: ${currentImagePath}`);
+        }
+
+        // アノテーションファイルを削除（存在する場合のみ）
+        if (fs.existsSync(currentTxtPath)) {
+            fs.unlinkSync(currentTxtPath);
+            console.log(`Deleted annotation: ${currentTxtPath}`);
+        }
+
+        // ファイルリストから削除
+        loaded_files.jpgFiles.splice(index, 1);
+        if (loaded_files.txtFiles) {
+            // txtFilesのインデックスはjpgFilesと同じインデックスを使用
+            loaded_files.txtFiles.splice(index, 1);
+        }
+
+        // スライダーの最大値を更新
+        const slider = document.querySelector('#image_index_slider');
+        slider.max = Math.max(0, loaded_files.jpgFiles.length - 1);
+
+        // インデックスを調整（削除後のファイル数に合わせる）
+        if (loaded_files.jpgFiles.length === 0) {
+            index = 0;
+        } else if (index >= loaded_files.jpgFiles.length) {
+            index = loaded_files.jpgFiles.length - 1;
+        }
+
+        // ディレクトリ情報を更新
+        document.querySelector('#directory_information').innerHTML =
+            document.querySelector('#directory_information').innerHTML.replace(
+                /Loaded Image: \d+/,
+                `Loaded Image: ${loaded_files.jpgFiles.length}`
+            );
+
+        // 現在のアノテーションをクリア
+        bbs = [];
+
+        // 次の画像を読み込み（ファイルが残っている場合）
+        if (loaded_files.jpgFiles.length > 0) {
+            setImageIndex(index);
+        } else {
+            // すべてのファイルが削除された場合
+            document.querySelector('#image_information').innerHTML = 'No images available.';
+            document.querySelector('#bb_count').innerHTML = 'Bounding box count: 0';
+            // キャンバスをクリア
+            clear();
+            background(220);
+        }
+
+        console.log('File(s) deleted successfully via shortcut.');
+
+    } catch (error) {
+        console.error('Error deleting files:', error);
+    } finally {
+        isDeleting = false;
+    }
+}
