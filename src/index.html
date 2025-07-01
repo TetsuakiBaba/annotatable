@@ -15,16 +15,21 @@
   <nav class="navbar bg-light p-3">
     <div class="container-fluid">
       <span class="fs-1 fw-semibold"><img src="./images/logo_1024x.png" width="50px">annotatable</span>
-      <span class="text-muted small">
-        a simple tool for annotating images<br>
-        <span id="version">test</span>
-      </span>
-
+      <div class="d-flex align-items-center">
+        <button type="button" class="btn btn-outline-secondary btn-sm me-3" onclick="toggleLayout();"
+          id="layout-toggle-btn">
+          <i class="bi bi-layout-three-columns"></i> Full Screen
+        </button>
+        <span class="text-muted small">
+          a simple tool for annotating images<br>
+          <span id="version">test</span>
+        </span>
+      </div>
     </div>
   </nav>
   <div class="container-fluid mt-4">
-    <div class="row">
-      <div class="col-4">
+    <div class="row" id="main-layout">
+      <div class="col-4" id="left-panel">
         <div class="card">
           <div class="card-body row">
             <div class="col-12 mb-3">
@@ -83,7 +88,7 @@
           </div>
         </div>
       </div>
-      <div class="col-8">
+      <div class="col-8" id="right-panel">
         <div class="card">
           <div class="card-body">
             <div class="row align-items-center text-center mb-2">
@@ -113,7 +118,8 @@
               <h5 class="alert-heading"><i data-pc-id="circle" data-pc-text="i"></i> information</h5>
               <span id="image_information"></span><br>
               <span id="bb_count"></span><br>
-              <button type="button" class="btn btn-danger btn-sm mt-2" onclick="deleteCurrentImageAndAnnotation();">
+              <button type="button" class="btn btn-danger btn-sm mt-2"
+                onclick="deleteCurrentImageAndAnnotationWithoutConfirm();">
                 <i class="bi bi-trash"></i> Delete Image & Annotation
               </button>
             </div>
@@ -150,10 +156,42 @@
             });
         });
 
-        // Command+Backspaceのショートカットを追加
+        // レイアウト切り替え機能
+        let isFullScreen = false;
+
+        function toggleLayout() {
+          const leftPanel = document.getElementById('left-panel');
+          const rightPanel = document.getElementById('right-panel');
+          const toggleBtn = document.getElementById('layout-toggle-btn');
+
+          if (isFullScreen) {
+            // 左右分割表示に戻す
+            leftPanel.style.display = 'block';
+            leftPanel.className = 'col-4';
+            rightPanel.className = 'col-8';
+            toggleBtn.innerHTML = '<i class="bi bi-layout-three-columns"></i> Full Screen';
+            isFullScreen = false;
+          } else {
+            // フルスクリーン表示にする
+            leftPanel.style.display = 'none';
+            rightPanel.className = 'col-12';
+            toggleBtn.innerHTML = '<i class="bi bi-columns-gap"></i> Split View';
+            isFullScreen = true;
+          }
+
+          // レイアウト変更後にキャンバスサイズを調整
+          // 少し遅延を入れてBootstrapのレイアウト変更が完了してから実行
+          setTimeout(() => {
+            if (typeof adjustCanvasSize === 'function') {
+              adjustCanvasSize();
+            }
+          }, 100);
+        }
+
+        // Backspaceのショートカットを追加
         document.addEventListener('keydown', function (event) {
-          // Command+Backspace (macOS) または Ctrl+Backspace (Windows/Linux)
-          if ((event.metaKey || event.ctrlKey) && event.key === 'Backspace') {
+          // Backspaceキーで画像を削除
+          if (event.key === 'Backspace') {
             event.preventDefault(); // デフォルトの動作を防ぐ
             if (typeof deleteCurrentImageAndAnnotationWithoutConfirm === 'function') {
               deleteCurrentImageAndAnnotationWithoutConfirm();

@@ -1,5 +1,5 @@
 var version = `
-last modified: 2025/06/21 21:32:40
+last modified: 2025/07/01 10:47:50
 `;
 
 let mode_multiple_labels = false;
@@ -468,7 +468,7 @@ function loadAnnotations() {
             imageLoadError();
             return;
         }
-        
+
         // ファイル拡張子の二重チェック
         const ext = path.extname(imagePath).toLowerCase();
         if (!['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'].includes(ext)) {
@@ -476,7 +476,7 @@ function loadAnnotations() {
             imageLoadError();
             return;
         }
-        
+
     } catch (error) {
         console.error('Cannot access image file:', imagePath, error);
         imageLoadError();
@@ -553,7 +553,7 @@ function imageLoadError() {
     text('Image Load Error', width / 2, height / 2);
     textSize(12);
     text('Check console for details', width / 2, height / 2 + 30);
-    
+
     // 破損したファイルを自動的にスキップして次の有効なファイルを探す
     setTimeout(() => {
         findNextValidImage();
@@ -648,7 +648,7 @@ function setImageIndex(i) {
         if (i >= 0 && i < loaded_files.jpgFiles.length) {
             index = i;
             document.querySelector('#image_index_slider').value = index;
-            
+
             // 画像ファイルの存在確認を追加
             const imagePath = loaded_files.jpgFiles[index];
             if (fs.existsSync(imagePath)) {
@@ -671,10 +671,10 @@ function findNextValidImage() {
     if (!loaded_files || !loaded_files.jpgFiles || loaded_files.jpgFiles.length === 0) {
         return;
     }
-    
+
     let foundValid = false;
     let originalIndex = index;
-    
+
     // 現在のインデックスから後方検索
     for (let i = index; i < loaded_files.jpgFiles.length; i++) {
         if (fs.existsSync(loaded_files.jpgFiles[i])) {
@@ -685,7 +685,7 @@ function findNextValidImage() {
             break;
         }
     }
-    
+
     // 後方で見つからない場合は前方検索
     if (!foundValid) {
         for (let i = 0; i < originalIndex; i++) {
@@ -698,7 +698,7 @@ function findNextValidImage() {
             }
         }
     }
-    
+
     // 有効なファイルが見つからない場合
     if (!foundValid) {
         console.error('No valid image files found');
